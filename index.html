@@ -10,10 +10,12 @@ video,canvas{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
 button{font:inherit;color:var(--g);background:transparent;border:2px solid var(--g);padding:12px 28px;letter-spacing:.2em;font-size:16px}
 #msg{position:fixed;left:0;right:0;top:38%;text-align:center;z-index:4;display:none;flex-direction:column;align-items:center;gap:14px;font-size:24px;letter-spacing:.2em;text-shadow:0 0 12px var(--g)}
 #vg{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,12,4,.45) 100%)}
+video::-webkit-media-controls,video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}
+video{pointer-events:none}
 </style></head><body>
 <video id="v" playsinline muted autoplay></video><canvas id="gl"></canvas><canvas id="hud"></canvas><div id="vg"></div>
 <div id="msg"><div>AREA LIBERA</div><button id="again">RIGIOCA</button></div>
-<div id="ov"><h1>DRONE HUNTER AR</h1><p>3 droni ostili ti circondano. Muoviti nello spazio, inquadrali, centrali col mirino e tocca lo schermo per sparare. Alza il volume.</p><button id="go">AVVIA</button><p id="st" style="font-size:12px"></p></div>
+<div id="ov"><h1>DRONE HUNTER AR</h1><p>5 droni ostili ti circondano. Muoviti nello spazio, inquadrali, centrali col mirino e tocca lo schermo per sparare. Alza il volume.</p><button id="go">AVVIA</button><p id="st" style="font-size:12px"></p></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
@@ -38,7 +40,7 @@ function init(){
   const tx=new THREE.CanvasTexture(c);tx.mapping=THREE.EquirectangularReflectionMapping;tx.encoding=THREE.sRGBEncoding;const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromEquirectangular(tx).texture;tx.dispose();pm.dispose()}
  hx=$('hud').getContext('2d');addEventListener('resize',resize);resize();
  fetch('drone.glb').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>new THREE.GLTFLoader().parse(ab,'',g=>{model=g.scene;model.traverse(o=>{if(o.isMesh)o.material.envMapIntensity=1.3});const b=new THREE.Box3().setFromObject(model),s=new THREE.Vector3();b.getSize(s);model.scale.setScalar(.8/Math.max(s.x,s.y,s.z));
-  const c=b.getCenter(new THREE.Vector3()).multiplyScalar(model.scale.x);const w=new THREE.Group();model.position.sub(c);w.add(model);model=w;spawn();started=true},e=>alert('Errore nel modello drone.glb'))).catch(e=>alert('drone.glb non trovato: mettilo nella stessa cartella di index.html'));
+  const c=b.getCenter(new THREE.Vector3()).multiplyScalar(model.scale.x);const w=new THREE.Group();model.position.sub(c);w.add(model);model=w;spawn();started=true},e=>{window.merr='MODELLO drone.glb NON VALIDO'})).catch(e=>{window.merr='drone.glb NON TROVATO: METTILO ACCANTO A index.html'});
  let dx=0,dy=0,moved=0,t0=0;const el=$('hud');
  addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;dx=e.clientX;dy=e.clientY;moved=0;t0=performance.now()});
  addEventListener('pointermove',e=>{if(!e.buttons||hasGyro)return;yaw-=(e.clientX-dx)*.005;pitch=Math.max(-1.4,Math.min(1.4,pitch-(e.clientY-dy)*.005));moved+=Math.abs(e.clientX-dx)+Math.abs(e.clientY-dy);dx=e.clientX;dy=e.clientY});
@@ -48,8 +50,8 @@ function init(){
 function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(2,devicePixelRatio||1);renderer.setPixelRatio(dpr);renderer.setSize(W,H,false);const h=$('hud');h.width=W*dpr;h.height=H*dpr;cam.aspect=W/H;cam.updateProjectionMatrix()}
 function spawn(){
  drones.forEach(d=>{scene.remove(d.m)});drones=[];
- for(let i=0;i<3;i++){const m=new THREE.Group(),bd=buildDrone();m.add(bd.g);scene.add(m);
-  drones.push({m,inn:bd.g,leds:bd.leds,rotors:bd.rotors,ant:bd.ant,spin:0,nextSpin:2+Math.random()*3,i,th:(i/3+Math.random()*.2)*Math.PI*2,r:4+Math.random()*3,h:[.5+Math.random()*.5,3+Math.random()*1.3,1.9+Math.random()*.7][i],sp:(Math.random()<.5?-1:1)*(.1+Math.random()*.12),ph:Math.random()*6,alive:true,snd:mkSnd()})}
+ for(let i=0;i<5;i++){const m=new THREE.Group(),bd=buildDrone();m.add(bd.g);scene.add(m);
+  drones.push({m,inn:bd.g,leds:bd.leds,rotors:bd.rotors,ant:bd.ant,spin:0,nextSpin:2+Math.random()*3,i,th:(i/5+Math.random()*.1)*Math.PI*2,r:6.5+Math.random()*2.5,h:[.3+Math.random()*.4,3.6+Math.random()*1.3,1.9+Math.random()*.7,.6+Math.random()*.5,3+Math.random()*1][i],sp:(Math.random()<.5?-1:1)*(.03+Math.random()*.035),ph:Math.random()*6,alive:true,snd:mkSnd()})}
 }
 let _gt,_rt;
 function glowTex(){if(_gt)return _gt;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.7)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return _gt=new THREE.CanvasTexture(c)}
@@ -58,12 +60,13 @@ function buildDrone(){
  const g=new THREE.Group();g.add(model.clone(true));const leds=[],rotors=[];
  const mt=new THREE.MeshStandardMaterial({color:0x6c767a,metalness:.9,roughness:.35});
  const led=(par,x,y,z,col,mode,ph,sz)=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.setScalar(sz);s.position.set(x,y,z);par.add(s);leds.push({s,mode,ph})};
- [[.5,.35,0],[.56,-.3,.6]].forEach(([R,tx,tz],k)=>{const o=new THREE.Group();o.rotation.set(tx,0,tz);const sp=new THREE.Group();o.add(sp);
+ [].forEach(([R,tx,tz],k)=>{const o=new THREE.Group();o.rotation.set(tx,0,tz);const sp=new THREE.Group();o.add(sp);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(R,.011,8,48),mt);ring.rotation.x=Math.PI/2;sp.add(ring);
   for(let j=0;j<3;j++){const a=j*Math.PI*2/3,pod=new THREE.Mesh(new THREE.BoxGeometry(.07,.045,.05),mt);pod.position.set(Math.cos(a)*R,0,Math.sin(a)*R);pod.rotation.y=-a;sp.add(pod);if(j===0)led(sp,Math.cos(a)*R,.04,Math.sin(a)*R,0xff2a2a,0,k*1.7,.13)}
   g.add(o);rotors.push(sp)});
  const ant=new THREE.Group();ant.position.set(0,.3,0);const st=new THREE.Mesh(new THREE.CylinderGeometry(.006,.01,.28,6),mt);st.position.y=.14;ant.add(st);led(ant,0,.29,0,0xffffff,1,0,.16);g.add(ant);
  led(g,0,-.3,0,0xff2a2a,0,.8,.14);
+ led(g,.36,.1,0,0xff2a2a,0,0,.12);led(g,-.36,.1,0,0xff2a2a,0,1.6,.12);
  return{g,leds,rotors,ant}}
 function buildDroneOld(){
  const g=new THREE.Group();g.add(model.clone(true));const leds=[],rotors=[];
@@ -83,7 +86,7 @@ function mkSnd(){
  [o,o2,l].forEach(x=>x.start());return{o,o2,l,f,g,p}
 }
 function sndUpd(d,dist,v){const s=d.snd;if(!s)return;const n=audio.currentTime;
- s.g.gain.setTargetAtTime(Math.min(.45,2.2/(dist*dist)),n,.08);s.o.frequency.setTargetAtTime(60+260/dist,n,.1);s.o2.frequency.setTargetAtTime(64+260/dist,n,.1);
+ s.g.gain.setTargetAtTime(Math.min(.5,14/(dist*dist)),n,.08);s.o.frequency.setTargetAtTime(60+260/dist,n,.1);s.o2.frequency.setTargetAtTime(64+260/dist,n,.1);
  s.l.frequency.setTargetAtTime(18+70/dist,n,.1);s.p.pan.setTargetAtTime(Math.max(-1,Math.min(1,v.x/dist*1.4)),n,.05);s.f.frequency.setTargetAtTime(v.z>0?330:900,n,.08)}
 function noise(dur,freq,vol){if(!audio)return;const n=audio.sampleRate*dur,b=audio.createBuffer(1,n,audio.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);
  const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();s.buffer=b;f.type='lowpass';f.frequency.value=freq;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(audio.destination);s.start()}
@@ -124,9 +127,9 @@ function brackets(x,y,s,c,lab){const l=s*.3;hx.strokeStyle=c;hx.lineWidth=2.5*dp
 function loop(ts){
  requestAnimationFrame(loop);const dt=Math.min(.05,(ts-last)/1000||0);last=ts;t+=dt;orient();
  const inv=cam.quaternion.clone().invert(),fw=new THREE.Vector3();cam.getWorldDirection(fw);
- drones.forEach(d=>{if(!d.alive)return;d.th+=d.sp*dt;const r=Math.max(2.6,d.r+Math.sin(t*.4+d.ph)*2.2);
+ drones.forEach(d=>{if(!d.alive)return;d.th+=d.sp*dt;const r=Math.max(5.5,d.r+Math.sin(t*.25+d.ph)*1);
   d.m.position.set(Math.sin(d.th)*r,d.h+Math.sin(t*.35+d.ph)*.5+Math.sin(t*1.3+d.ph)*.12,-Math.cos(d.th)*r);d.m.lookAt(0,d.m.position.y,0);d.nextSpin-=dt;if(d.nextSpin<0){d.spin=(Math.random()<.5?-1:1)*(5+Math.random()*5);d.nextSpin=3+Math.random()*5}d.spin*=Math.pow(.35,dt);d.inn.rotation.y+=d.spin*dt+.15*dt;d.inn.rotation.z=Math.sin(t*1.7+d.ph)*.12+d.spin*.01;d.inn.rotation.x=Math.cos(t*1.3+d.ph)*.08;d.rotors.forEach((b,k)=>{b.rotation.y+=(k%2?-1:1)*(1.4+k*.6)*dt});d.ant.rotation.z=Math.sin(t*3+d.ph)*.25;d.ant.rotation.x=Math.cos(t*2.3+d.ph)*.2;d.leds.forEach(l=>{const on=l.mode?((t*6+l.ph)%1<.12):(Math.sin(t*5+l.ph)>.2);l.s.material.opacity=on?1:.1});
-  const rel=d.m.position.clone().sub(cam.position),v=rel.clone().applyQuaternion(inv);d.v=v;d.dist=rel.length();sndUpd(d,d.dist,v);d.hT=(d.hT||0)+dt;if(d.hT>.1){d.hT=0;d.hist=d.hist||[];d.hist.push({x:rel.x,z:rel.z,q:Math.min(1,d.dist/10)});if(d.hist.length>18)d.hist.shift()}});
+  const rel=d.m.position.clone().sub(cam.position),v=rel.clone().applyQuaternion(inv);d.v=v;d.dist=rel.length();sndUpd(d,d.dist,v);d.hT=(d.hT||0)+dt;if(d.hT>.1){d.hT=0;d.hist=d.hist||[];d.hist.push({x:rel.x,z:rel.z,q:Math.min(1,d.dist/12)});if(d.hist.length>18)d.hist.shift()}});
  for(let i=booms.length-1;i>=0;i--){const b=booms[i];b.life-=dt/.9;const pos=b.pts.geometry.attributes.position;
   for(let j=0;j<b.v.length;j++){pos.setXYZ(j,pos.getX(j)+b.v[j].x*dt,pos.getY(j)+b.v[j].y*dt,pos.getZ(j)+b.v[j].z*dt);b.v[j].multiplyScalar(.96)}
   pos.needsUpdate=true;b.m.opacity=Math.max(0,b.life);b.m2.opacity=Math.max(0,b.life*3-2);b.m2.size=1.1+(1-b.life)*1.5;
@@ -157,10 +160,10 @@ function loop(ts){
  const sw=t*2.2;for(let i=0;i<30;i++){const a=sw-i*.05;hx.fillStyle=`rgba(57,255,106,${.4*Math.pow(1-i/30,1.6)})`;hx.beginPath();hx.moveTo(rx,ry);hx.arc(rx,ry,rr,a-.055,a);hx.fill()}
  hx.strokeStyle='rgba(160,255,185,.95)';hx.beginPath();hx.moveTo(rx,ry);hx.lineTo(rx+Math.cos(sw)*rr,ry+Math.sin(sw)*rr);hx.stroke();
  hx.fillStyle=G;hx.beginPath();hx.moveTo(rx,ry-6*dpr);hx.lineTo(rx-4*dpr,ry+3*dpr);hx.lineTo(rx+4*dpr,ry+3*dpr);hx.fill();
- drones.forEach(d=>{if(!d.alive||!d.v)return;const q=Math.min(1,d.dist/10),L=Math.hypot(d.v.x,d.v.z)||1,bx=rx+d.v.x/L*q*rr*.92,by=ry+d.v.z/L*q*rr*.92;
+ drones.forEach(d=>{if(!d.alive||!d.v)return;const q=Math.min(1,d.dist/12),L=Math.hypot(d.v.x,d.v.z)||1,bx=rx+d.v.x/L*q*rr*.92,by=ry+d.v.z/L*q*rr*.92;
   hx.shadowColor='#7dff9a';hx.shadowBlur=16*dpr;hx.fillStyle='rgba(57,255,106,.35)';hx.beginPath();hx.arc(bx,by,(7+2*Math.sin(t*6))*dpr,0,7);hx.fill();hx.fillStyle='#d8ffe0';hx.beginPath();hx.arc(bx,by,3.6*dpr,0,7);hx.fill();hx.shadowBlur=8*dpr;hx.shadowColor='#39ff6a'});
  hx.shadowColor=G;hx.fillStyle=G;hx.font=`${13*dpr}px ui-monospace,monospace`;hx.textAlign='left';
- hx.fillText(`DRONI ${drones.filter(d=>d.alive).length}/3`,16*dpr,34*dpr);hx.fillText(hasGyro?'SENSORI OK':'TRASCINA PER GUARDARE',16*dpr,54*dpr);
+ hx.fillText(`DRONI ${drones.filter(d=>d.alive).length}/5`,16*dpr,34*dpr);hx.fillText(hasGyro?'SENSORI OK':'TRASCINA PER GUARDARE',16*dpr,54*dpr);if(window.merr){hx.fillStyle='#ff6a6a';hx.textAlign='center';hx.fillText(window.merr,W*dpr/2,H*dpr*.7);hx.textAlign='left'}
  if(!window._sp||window._spd!==dpr){const s=Math.max(3,Math.round(3*dpr)),u=Math.max(1,Math.round(dpr)),c=document.createElement('canvas');c.width=c.height=s;const x=c.getContext('2d');x.fillStyle='rgba(0,0,0,.34)';x.fillRect(0,0,s,u);x.fillStyle='rgba(0,0,0,.2)';x.fillRect(0,0,u,s);window._sp=hx.createPattern(c,'repeat');window._spd=dpr}
  hx.shadowBlur=0;hx.globalCompositeOperation='destination-out';hx.globalAlpha=1;hx.fillStyle=window._sp;hx.fillRect(0,0,W*dpr,H*dpr);
  const bandY=((t*.18)%1.3-.15)*H*dpr,gr=hx.createLinearGradient(0,bandY-60*dpr,0,bandY+60*dpr);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.5,'rgba(0,0,0,.16)');gr.addColorStop(1,'rgba(0,0,0,0)');hx.globalAlpha=1;hx.fillStyle=gr;hx.fillRect(0,bandY-60*dpr,W*dpr,120*dpr);
